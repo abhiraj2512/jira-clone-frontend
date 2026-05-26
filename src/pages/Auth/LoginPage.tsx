@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import styles from './LoginPage.module.css';
 
 const { Title } = Typography;
 
 const LoginPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     const onFinish = async (values: any) => {
@@ -20,10 +23,7 @@ const LoginPage: React.FC = () => {
             const accessToken = response.data.accessToken || response.data.token;
             
             if (accessToken) {
-                // Storing accessToken as requested
-                localStorage.setItem('accessToken', accessToken);
-                // Also storing as token since axios interceptor expects 'token'
-                localStorage.setItem('token', accessToken);
+                login(accessToken);
                 message.success('Login successful');
                 navigate('/dashboard');
             } else {
@@ -38,10 +38,11 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f0f2f5' }}>
-            <Card style={{ width: 100, minWidth: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '8px' }}>
-                <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                    <Title level={3} style={{ margin: 0 }}>Login</Title>
+        <div className={styles.container}>
+            <Card className={styles.card}>
+                <div className={styles.logoArea}>
+                    <div className={styles.logoIcon}>J</div>
+                    <Title level={3} className={styles.title}>Log in to your account</Title>
                 </div>
                 
                 <Form
@@ -70,7 +71,7 @@ const LoginPage: React.FC = () => {
                     </Form.Item>
 
                     <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
-                        <Button type="primary" htmlType="submit" loading={loading} block>
+                        <Button type="primary" htmlType="submit" loading={loading} className={styles.submitBtn} block>
                             Log in
                         </Button>
                     </Form.Item>

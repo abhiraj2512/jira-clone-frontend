@@ -1,0 +1,100 @@
+.header {
+  background: #fff !important;
+  padding: 0 24px !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e4e7;
+  height: 64px !important;
+  line-height: 64px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  position: sticky;
+  top: 0;
+  z-index: 9;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+}
+
+.createBtn {
+  background-color: #0052cc !important;
+  border-color: #0052cc !important;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.createBtn:hover {
+  background-color: #0065ff !important;
+  border-color: #0065ff !important;
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.emailText {
+  font-size: 14px;
+  color: #5e6c84;
+  font-weight: 500;
+}
+
+.avatar {
+  font-weight: bold;
+  font-size: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.userMenu {
+  min-width: 220px;
+  padding: 8px 4px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+}
+
+.userDetails {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.userEmail {
+  font-size: 14px;
+  font-weight: 600;
+  color: #172b4d;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.userRole {
+  font-size: 12px;
+  color: #5e6c84;
+}
+
+.menuDivider {
+  height: 1px;
+  background-color: #f0f0f0;
+  margin: 8px 0;
+}
+
+.logoutBtn {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  font-weight: 500;
+}

@@ -1,47 +1,45 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Row, Col, Typography, Spin, message, Empty } from 'antd';
+import { Row, Col, Typography, Empty, Card } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../api/axios';
+import type { Project } from '../../types/project';
+import PageLoader from '../../components/common/PageLoader';
+import ErrorState from '../../components/common/ErrorState';
+import styles from './DashboardPage.module.css';
 
 const { Title, Text } = Typography;
-
-interface Project {
-    id: string;
-    name: string;
-    key: string;
-    description: string;
-    createdAt: string;
-}
 
 const DashboardPage: React.FC = () => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
+    const fetchProjects = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await axiosInstance.get('/projects');
+            setProjects(response.data);
+        } catch (err: any) {
+            const msg = err.response?.data?.message || err.message || 'Failed to load projects';
+            setError(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        let isMounted = true;
-        
-        const fetchProjects = async () => {
-            try {
-                const response = await axiosInstance.get('/projects');
-                if (isMounted) {
-                    setProjects(response.data);
-                }
-            } catch (error: any) {
-                if (isMounted) {
-                    message.error(error.response?.data?.message || 'Failed to load projects');
-                }
-            } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
-            }
+        fetchProjects();
+
+        // Listen for the project-created custom event emitted by the global AppHeader Modal
+        const handleProjectCreated = () => {
+            fetchProjects();
         };
 
-        fetchProjects();
-        
+        window.addEventListener('project-created', handleProjectCreated);
         return () => {
-            isMounted = false;
+            window.removeEventListener('project-created', handleProjectCreated);
         };
     }, []);
 
@@ -50,43 +48,53 @@ const DashboardPage: React.FC = () => {
     };
 
     return (
-        <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
-            <div style={{ marginBottom: '24px' }}>
-                <Title level={2}>Dashboard</Title>
-                <Text type="secondary">View and manage your projects.</Text>
+        <div className={styles.container}>
+            <div className={styles.headerSection}>
+                <Title level={2} className={styles.pageTitle}>Projects</Title>
+                <Text className={styles.pageSubtitle}>View, manage, and click into your active project directories.</Text>
             </div>
 
             {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
-                    <Spin size="large" />
-                </div>
+                <PageLoader />
+            ) : error ? (
+                <ErrorState message={error} onRetry={fetchProjects} />
             ) : projects.length === 0 ? (
-                <div style={{ padding: '40px 0' }}>
-                    <Empty description="No projects found" />
+                <div style={{ padding: '60px 0', textAlign: 'center' }}>
+                    <Empty description="No projects found. Click 'Create Project' in the header to get started!" />
                 </div>
             ) : (
-                <Row gutter={[24, 24]}>
+                <Row gutter={[24, 24]} className={styles.cardGrid}>
                     {projects.map((project) => (
-                        <Col xs={24} sm={12} md={8} lg={8} key={project.id}>
-                            <Card
-                                hoverable
+                        <Col xs={24} sm={12} md={8} lg={8} xl={6} key={project.id}>
+                            <div 
+                                className={styles.projectCard}
                                 onClick={() => handleProjectClick(project.id)}
-                                title={project.name}
-                                extra={<Text keyboard>{project.key}</Text>}
-                                style={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-                                styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column' } }}
                             >
-                                <div style={{ flex: 1, marginBottom: '16px' }}>
-                                    <Text type="secondary">
-                                        {project.description || 'No description provided.'}
-                                    </Text>
-                                </div>
-                                <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '12px' }}>
-                                    <Text type="secondary" style={{ fontSize: '13px' }}>
-                                        Created: {new Date(project.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                    </Text>
-                                </div>
-                            </Card>
+                                <Card
+                                    bordered={false}
+                                    style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 0 }}
+                                    styles={{ body: { padding: 0, flex: 1, display: 'flex', flexDirection: 'column' } }}
+                                >
+                                    <div className={styles.cardBody}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                            <span className={styles.projectCardTitle}>{project.name}</span>
+                                            <span className={styles.projectKey}>{project.key}</span>
+                                        </div>
+                                        
+                                        <div className={styles.descriptionWrapper}>
+                                            <p className={styles.description}>
+                                                {project.description || 'No description provided.'}
+                                            </p>
+                                        </div>
+                                        
+                                        <div className={styles.cardFooter}>
+                                            <span className={styles.dateText}>
+                                                Created: {new Date(project.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </div>
                         </Col>
                     ))}
                 </Row>

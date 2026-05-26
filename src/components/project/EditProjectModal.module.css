@@ -1,0 +1,25 @@
+.modalWrapper :global(.ant-modal-content) {
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  padding: 24px;
+}
+
+.modalWrapper :global(.ant-modal-title) {
+  font-size: 20px;
+  font-weight: 600;
+  color: #172b4d;
+  margin-bottom: 12px;
+}
+
+.form {
+  margin-top: 16px;
+}
+
+.input {
+  border-radius: 4px;
+}
+
+.input:focus,
+.input:hover {
+  border-color: #0052cc;
+}

@@ -1,0 +1,71 @@
+.sider {
+  border-right: 1px solid #e5e4e7;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  left: 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
+  z-index: 10;
+}
+
+.logoContainer {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  border-bottom: 1px solid #e5e4e7;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: #0052cc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0, 82, 204, 0.3);
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 700;
+  color: #172b4d;
+  letter-spacing: -0.2px;
+}
+
+.menu {
+  border-inline-end: none !important;
+  margin-top: 16px;
+}
+
+.menuIcon {
+  font-size: 16px !important;
+}
+
+.sider :global(.ant-menu-item-selected) {
+  background-color: #deebff !important;
+  color: #0052cc !important;
+  font-weight: 600;
+}
+
+.sider :global(.ant-menu-item-selected .menuIcon) {
+  color: #0052cc !important;
+}
+
+.sider :global(.ant-layout-sider-trigger) {
+  border-top: 1px solid #e5e4e7;
+  background: #fff !important;
+  color: #172b4d !important;
+}
+
+.sider :global(.ant-layout-sider-trigger:hover) {
+  background: #f4f5f7 !important;
+}

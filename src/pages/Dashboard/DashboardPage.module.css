@@ -1,0 +1,99 @@
+.container {
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100%;
+}
+
+.headerSection {
+  margin-bottom: 32px;
+  border-bottom: 1px solid #e5e4e7;
+  padding-bottom: 20px;
+}
+
+.pageTitle {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  color: #172b4d !important;
+  margin: 0 0 6px 0 !important;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: #5e6c84;
+}
+
+.cardGrid {
+  margin-top: 16px;
+}
+
+.projectCard {
+  border-radius: 8px;
+  border: 1px solid #e5e4e7;
+  background: #ffffff;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: pointer;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.projectCard:hover {
+  transform: translateY(-4px);
+  border-color: #4c9aff;
+  box-shadow: 0 8px 16px rgba(9, 30, 66, 0.08);
+}
+
+.projectCardTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #172b4d;
+}
+
+.projectKey {
+  font-size: 11px;
+  font-weight: 700;
+  background-color: #deebff;
+  color: #0052cc;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.cardBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px;
+}
+
+.descriptionWrapper {
+  flex: 1;
+  margin-bottom: 16px;
+  min-height: 48px;
+}
+
+.description {
+  font-size: 14px;
+  color: #5e6c84;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardFooter {
+  border-top: 1px solid #f4f5f7;
+  padding-top: 12px;
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dateText {
+  font-size: 12px;
+  color: #8993a4;
+}
