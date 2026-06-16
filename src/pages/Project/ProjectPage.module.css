@@ -10,6 +10,8 @@
   margin-bottom: 20px;
 }
 
+/* ── Header ─────────────────────────────────────────────── */
+
 .headerRow {
   display: flex;
   justify-content: space-between;
@@ -22,7 +24,8 @@
 .titleSection {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .projectTitle {
@@ -43,9 +46,32 @@
   letter-spacing: 0.5px;
 }
 
+.myRoleBadge {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 3px 10px !important;
+  border-radius: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
 .actionsContainer {
   display: flex;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inviteBtn {
+  background-color: #e8f0fe !important;
+  border-color: #0052cc !important;
+  color: #0052cc !important;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+.inviteBtn:hover {
+  background-color: #c6d9ff !important;
 }
 
 .editBtn {
@@ -53,7 +79,7 @@
   border-color: #dfe1e6 !important;
   color: #42526e !important;
   font-weight: 500;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .editBtn:hover {
@@ -64,20 +90,22 @@
 
 .deleteBtn {
   font-weight: 500;
-  border-radius: 4px;
+  border-radius: 6px;
 }
+
+/* ── Main card ───────────────────────────────────────────── */
 
 .mainCard {
   border-radius: 8px;
   border: 1px solid #e5e4e7;
   background: #ffffff;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   margin-bottom: 24px;
 }
 
 .sectionTitle {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #172b4d;
   margin-bottom: 12px;
@@ -87,7 +115,7 @@
 }
 
 .sectionIcon {
-  font-size: 16px;
+  font-size: 15px;
   color: #0052cc;
 }
 
@@ -100,6 +128,8 @@
   border-radius: 6px;
   border: 1px solid #e5e4e7;
 }
+
+/* ── Kanban ──────────────────────────────────────────────── */
 
 .issuesContainer {
   margin-top: 16px;
@@ -115,7 +145,7 @@
 
 .kanbanColumn {
   flex: 1;
-  min-width: 280px;
+  min-width: 240px;
   background-color: #f4f5f7;
   border-radius: 8px;
   padding: 12px;
@@ -135,19 +165,11 @@
 }
 
 .columnTitle {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #5e6c84;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.emptyColumn {
-  font-size: 13px;
-  color: #8993a4;
-  text-align: center;
-  padding: 36px 0;
-  font-style: italic;
+  letter-spacing: 0.7px;
 }
 
 .taskCard {
@@ -195,26 +217,28 @@
   align-items: center;
 }
 
+/* ── Right Sidebar ──────────────────────────────────────── */
+
 .rightSidebar {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .sidebarCard {
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid #e5e4e7;
   background: #ffffff;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .sidebarTitle {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: #172b4d;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #f4f5f7;
   display: flex;
   align-items: center;
@@ -223,24 +247,27 @@
 
 .sidebarIcon {
   color: #0052cc;
+  font-size: 15px;
 }
 
 .metaGrid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .metaRow {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .metaLabel {
-  width: 110px;
-  font-size: 13px;
-  color: #5e6c84;
+  width: 100px;
+  font-size: 12px;
+  color: #7a869a;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .metaValue {
@@ -249,44 +276,85 @@
   font-weight: 600;
 }
 
-.memberAvatars {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.memberAvatarItem {
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 0 1px #dfe1e6;
-  transition: transform 0.15s ease;
-}
-
-.memberAvatarItem:hover {
-  transform: scale(1.1);
-  z-index: 2;
-}
-
-.memberPlaceholderText {
+.memberCountBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #deebff;
+  color: #0052cc;
   font-size: 12px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+
+/* ── Team Members Card ──────────────────────────────────── */
+
+.teamHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.teamActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.memberCountChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f7;
+  color: #5e6c84;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+
+.rbacNote {
+  font-size: 11px;
   color: #8993a4;
   line-height: 1.5;
-  margin: 0;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #f4f5f7;
+  font-style: italic;
 }
+
+/* ── Responsive ─────────────────────────────────────────── */
 
 @media (max-width: 991px) {
   .container {
-    padding: 24px;
+    padding: 20px;
   }
-  
+
   .headerRow {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 12px;
   }
-  
+
   .actionsContainer {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .kanbanBoard {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .container {
+    padding: 16px;
+  }
+
+  .projectTitle {
+    font-size: 22px !important;
   }
 }

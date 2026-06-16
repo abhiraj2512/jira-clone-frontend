@@ -1,0 +1,55 @@
+.membersList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+  cursor: default;
+}
+
+.memberRow:hover {
+  background-color: #f4f5f7;
+}
+
+.memberInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.memberName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #172b4d;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberEmail {
+  font-size: 12px;
+  color: #8993a4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.youBadge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #0052cc;
+  background-color: #deebff;
+  padding: 1px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
