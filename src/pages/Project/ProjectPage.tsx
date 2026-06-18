@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Typography,
@@ -8,7 +8,6 @@ import {
   Row,
   Col,
   Tooltip,
-  Badge,
   message,
   Tag,
   Skeleton,
@@ -20,24 +19,28 @@ import {
   DeleteOutlined,
   TeamOutlined,
   InfoCircleOutlined,
-  UnorderedListOutlined,
   PlusOutlined,
-  ArrowUpOutlined,
-  MinusOutlined,
   CrownOutlined,
   CodeOutlined,
   EyeOutlined,
   ReloadOutlined,
   UserAddOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons';
 import axiosInstance from '../../api/axios';
 import type { Project, ProjectMember, ProjectRole } from '../../types/project';
+import type { IssueSummary, Issue, IssueStatus } from '../../types/issue';
 import { useAuth } from '../../context/AuthContext';
 import PageLoader from '../../components/common/PageLoader';
 import ErrorState from '../../components/common/ErrorState';
 import EditProjectModal from '../../components/project/EditProjectModal';
 import InviteMemberModal from '../../components/project/InviteMemberModal';
 import TeamMembersSection from '../../components/project/TeamMembersSection';
+import KanbanBoard from '../../components/project/KanbanBoard';
+import CreateIssueModal from '../../components/project/CreateIssueModal';
+import IssueDrawer from '../../components/project/IssueDrawer';
+import BoardFilters from '../../components/project/BoardFilters';
+import type { FilterState } from '../../components/project/BoardFilters';
 import styles from './ProjectPage.module.css';
 
 const { Title, Text } = Typography;
@@ -49,52 +52,67 @@ const ROLE_CONFIG: Record<
 > = {
   PROJECT_ADMIN: { label: 'Project Admin', color: '#974f0c', bg: '#fff7e6', icon: <CrownOutlined /> },
   DEVELOPER:     { label: 'Developer',     color: '#006644', bg: '#e3fcef', icon: <CodeOutlined /> },
-  VIEWER:        { label: 'Viewer',         color: '#344563', bg: '#ebecf0', icon: <EyeOutlined /> },
+  VIEWER:        { label: 'Viewer',        color: '#344563', bg: '#ebecf0', icon: <EyeOutlined /> },
 };
 
-function canEditProject(role: ProjectRole | null)  { return role === 'PROJECT_ADMIN'; }
-function canDeleteProject(role: ProjectRole | null) { return role === 'PROJECT_ADMIN'; }
-function canInviteMembers(role: ProjectRole | null) { return role === 'PROJECT_ADMIN'; }
+const canEditProject  = (r: ProjectRole | null) => r === 'PROJECT_ADMIN';
+const canDeleteProject = (r: ProjectRole | null) => r === 'PROJECT_ADMIN';
+const canInviteMembers = (r: ProjectRole | null) => r === 'PROJECT_ADMIN';
+const canCreateIssue   = (r: ProjectRole | null) => r === 'PROJECT_ADMIN' || r === 'DEVELOPER';
 
-// ── Mock Kanban (unchanged from original) ────────────────────────────────────
-const buildMockTasks = (projectKey: string) => ({
-  todo: [
-    { id: '1', title: 'Set up project database schema & multitenancy support', key: `${projectKey}-1`, priority: 'High' },
-    { id: '2', title: 'Configure client-side Axios route interceptors',        key: `${projectKey}-2`, priority: 'Medium' },
-  ],
-  inProgress: [
-    { id: '3', title: 'Overhaul authentication token payload decoders', key: `${projectKey}-3`, priority: 'High' },
-  ],
-  done: [
-    { id: '4', title: 'Install Ant Design UI and basic reset stylesheets', key: `${projectKey}-4`, priority: 'Low' },
-  ],
-});
+// ── Filter logic ──────────────────────────────────────────────────────────────
+function applyFilters(issues: IssueSummary[], f: FilterState): IssueSummary[] {
+  return issues.filter((issue) => {
+    if (f.search && !issue.title.toLowerCase().includes(f.search.toLowerCase())) return false;
+    if (f.status !== 'ALL' && issue.status !== f.status) return false;
+    if (f.priority !== 'ALL' && issue.priority !== f.priority) return false;
+    if (f.assigneeId === 'UNASSIGNED' && issue.assigneeId !== null) return false;
+    if (f.assigneeId !== 'ALL' && f.assigneeId !== 'UNASSIGNED' && issue.assigneeId !== f.assigneeId) return false;
+    return true;
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+const DEFAULT_FILTERS: FilterState = {
+  search: '',
+  status: 'ALL',
+  priority: 'ALL',
+  assigneeId: 'ALL',
+};
 
 const ProjectPage: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Project state
-  const [project, setProject]   = useState<Project | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  // ── Project ──────────────────────────────────────────────────────────────
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Members state
-  const [members, setMembers]             = useState<ProjectMember[]>([]);
+  // ── Members ──────────────────────────────────────────────────────────────
+  const [members, setMembers] = useState<ProjectMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
-  const [membersError, setMembersError]   = useState<string | null>(null);
-
-  // Current user's role in this project
+  const [membersError, setMembersError] = useState<string | null>(null);
   const [myRole, setMyRole] = useState<ProjectRole | null>(null);
 
-  // Modal states
+  // ── Issues ───────────────────────────────────────────────────────────────
+  const [issues, setIssues] = useState<IssueSummary[]>([]);
+  const [issuesLoading, setIssuesLoading] = useState(false);
+  const [issuesError, setIssuesError] = useState<string | null>(null);
+
+  // ── Filters ──────────────────────────────────────────────────────────────
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const filteredIssues = useMemo(() => applyFilters(issues, filters), [issues, filters]);
+
+  // ── Modal / Drawer states ─────────────────────────────────────────────────
   const [editModalOpen,   setEditModalOpen]   = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [createIssueOpen, setCreateIssueOpen] = useState(false);
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
 
-  // ── Fetch project ────────────────────────────────────────────────────────
+  // ── Fetch project ─────────────────────────────────────────────────────────
   const fetchProject = useCallback(async () => {
     if (!projectId) { setLoading(false); return; }
     try {
@@ -110,7 +128,7 @@ const ProjectPage: React.FC = () => {
     }
   }, [projectId]);
 
-  // ── Fetch members ────────────────────────────────────────────────────────
+  // ── Fetch members ─────────────────────────────────────────────────────────
   const fetchMembers = useCallback(async () => {
     if (!projectId) return;
     try {
@@ -118,8 +136,6 @@ const ProjectPage: React.FC = () => {
       setMembersError(null);
       const res = await axiosInstance.get<ProjectMember[]>(`/projects/${projectId}/members`);
       setMembers(res.data);
-
-      // Derive current user's role
       if (user?.id) {
         const mine = res.data.find((m) => m.userId === user.id);
         setMyRole(mine?.role ?? null);
@@ -131,13 +147,29 @@ const ProjectPage: React.FC = () => {
     }
   }, [projectId, user?.id]);
 
+  // ── Fetch issues ──────────────────────────────────────────────────────────
+  const fetchIssues = useCallback(async () => {
+    if (!projectId) return;
+    try {
+      setIssuesLoading(true);
+      setIssuesError(null);
+      const res = await axiosInstance.get<IssueSummary[]>(`/projects/${projectId}/issues`);
+      setIssues(res.data);
+    } catch (err: any) {
+      setIssuesError(err.response?.data?.message || 'Failed to load issues');
+    } finally {
+      setIssuesLoading(false);
+    }
+  }, [projectId]);
+
   useEffect(() => {
     fetchProject();
     fetchMembers();
-  }, [fetchProject, fetchMembers]);
+    fetchIssues();
+  }, [fetchProject, fetchMembers, fetchIssues]);
 
-  // ── Actions ───────────────────────────────────────────────────────────────
-  const handleDelete = async () => {
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleDeleteProject = async () => {
     if (!projectId) return;
     try {
       setLoading(true);
@@ -150,13 +182,42 @@ const ProjectPage: React.FC = () => {
     }
   };
 
-  const handleEditSuccess = (updatedProject: Project) => {
-    setProject(updatedProject);
-  };
+  const handleEditSuccess = (updated: Project) => setProject(updated);
 
   const handleInviteSuccess = () => {
     setInviteModalOpen(false);
     fetchMembers();
+  };
+
+  const handleIssueCreated = (newIssue: IssueSummary) => {
+    setCreateIssueOpen(false);
+    setIssues((prev) => [newIssue, ...prev]);
+  };
+
+  const handleIssueUpdated = (updated: Issue) => {
+    setIssues((prev) =>
+      prev.map((i) =>
+        i.id === updated.id
+          ? {
+              ...i,
+              title: updated.title,
+              status: updated.status,
+              priority: updated.priority,
+              assigneeId: updated.assigneeId,
+            }
+          : i,
+      ),
+    );
+  };
+
+  const handleIssueStatusChanged = (issueId: string, newStatus: IssueStatus) => {
+    setIssues((prev) =>
+      prev.map((i) => (i.id === issueId ? { ...i, status: newStatus } : i)),
+    );
+  };
+
+  const handleIssueDeleted = (issueId: string) => {
+    setIssues((prev) => prev.filter((i) => i.id !== issueId));
   };
 
   // ── Guards ────────────────────────────────────────────────────────────────
@@ -171,12 +232,11 @@ const ProjectPage: React.FC = () => {
   if (!project) {
     return (
       <div className={styles.container}>
-        <ErrorState message="Project details could not be found." onRetry={fetchProject} />
+        <ErrorState message="Project not found." onRetry={fetchProject} />
       </div>
     );
   }
 
-  const mockTasks = buildMockTasks(project.key);
   const projectCreatedDate = new Date(project.createdAt).toLocaleDateString(undefined, {
     year: 'numeric', month: 'long', day: 'numeric',
   });
@@ -197,21 +257,13 @@ const ProjectPage: React.FC = () => {
       {/* Page Header */}
       <div className={styles.headerRow}>
         <div className={styles.titleSection}>
-          <Title level={2} className={styles.projectTitle}>
-            {project.name}
-          </Title>
+          <Title level={2} className={styles.projectTitle}>{project.name}</Title>
           <span className={styles.projectKeyTag}>{project.key}</span>
-
-          {/* Current user's role badge */}
           {roleConfig && (
             <Tag
               icon={roleConfig.icon}
               className={styles.myRoleBadge}
-              style={{
-                color: roleConfig.color,
-                backgroundColor: roleConfig.bg,
-                border: 'none',
-              }}
+              style={{ color: roleConfig.color, backgroundColor: roleConfig.bg, border: 'none' }}
             >
               {roleConfig.label}
             </Tag>
@@ -219,6 +271,16 @@ const ProjectPage: React.FC = () => {
         </div>
 
         <div className={styles.actionsContainer}>
+          {canCreateIssue(myRole) && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateIssueOpen(true)}
+              className={styles.createIssueBtn}
+            >
+              Create Issue
+            </Button>
+          )}
           {canInviteMembers(myRole) && (
             <Button
               icon={<UserAddOutlined />}
@@ -234,14 +296,14 @@ const ProjectPage: React.FC = () => {
               onClick={() => setEditModalOpen(true)}
               className={styles.editBtn}
             >
-              Edit Details
+              Edit
             </Button>
           )}
           {canDeleteProject(myRole) && (
             <Popconfirm
               title="Delete Project"
-              description={`Are you sure you want to delete "${project.name}"? This cannot be undone.`}
-              onConfirm={handleDelete}
+              description={`Delete "${project.name}"? This cannot be undone.`}
+              onConfirm={handleDeleteProject}
               okText="Yes, Delete"
               cancelText="Cancel"
               okButtonProps={{ danger: true, loading }}
@@ -254,10 +316,11 @@ const ProjectPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Layout */}
+      {/* Main layout */}
       <Row gutter={[24, 24]}>
-        {/* Left: Description + Kanban */}
+        {/* Left: Description + Issues Board */}
         <Col xs={24} lg={17}>
+          {/* Description */}
           <div className={styles.mainCard}>
             <h4 className={styles.sectionTitle}>
               <InfoCircleOutlined className={styles.sectionIcon} />
@@ -268,80 +331,60 @@ const ProjectPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Kanban board */}
-          <div className={styles.issuesContainer}>
-            <h4 className={styles.sectionTitle}>
-              <UnorderedListOutlined className={styles.sectionIcon} />
-              Issues Board
-            </h4>
-            <div className={styles.kanbanBoard}>
-              {/* To Do */}
-              <div className={styles.kanbanColumn}>
-                <div className={styles.columnHeader}>
-                  <span className={styles.columnTitle}>To Do</span>
-                  <Badge count={mockTasks.todo.length} style={{ backgroundColor: '#dfe1e6', color: '#42526e' }} />
-                </div>
-                {mockTasks.todo.map((task) => (
-                  <div className={styles.taskCard} key={task.id}>
-                    <p className={styles.taskTitle}>{task.title}</p>
-                    <div className={styles.taskFooter}>
-                      <span className={styles.taskKey}>{task.key}</span>
-                      <span className={styles.taskPriority}>
-                        <ArrowUpOutlined style={{ color: '#de350b', marginRight: 4 }} />
-                        <Text type="secondary">{task.priority}</Text>
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* In Progress */}
-              <div className={styles.kanbanColumn}>
-                <div className={styles.columnHeader}>
-                  <span className={styles.columnTitle}>In Progress</span>
-                  <Badge count={mockTasks.inProgress.length} style={{ backgroundColor: '#deebff', color: '#0052cc' }} />
-                </div>
-                {mockTasks.inProgress.map((task) => (
-                  <div className={styles.taskCard} key={task.id}>
-                    <p className={styles.taskTitle}>{task.title}</p>
-                    <div className={styles.taskFooter}>
-                      <span className={styles.taskKey}>{task.key}</span>
-                      <span className={styles.taskPriority}>
-                        <ArrowUpOutlined style={{ color: '#ff991f', marginRight: 4 }} />
-                        <Text type="secondary">{task.priority}</Text>
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Done */}
-              <div className={styles.kanbanColumn}>
-                <div className={styles.columnHeader}>
-                  <span className={styles.columnTitle}>Done</span>
-                  <Badge count={mockTasks.done.length} style={{ backgroundColor: '#e3fcef', color: '#00875a' }} />
-                </div>
-                {mockTasks.done.map((task) => (
-                  <div className={styles.taskCard} key={task.id}>
-                    <p className={styles.taskTitle}>{task.title}</p>
-                    <div className={styles.taskFooter}>
-                      <span className={styles.taskKey}>{task.key}</span>
-                      <span className={styles.taskPriority}>
-                        <MinusOutlined style={{ color: '#00875a', marginRight: 4 }} />
-                        <Text type="secondary">{task.priority}</Text>
-                      </span>
-                    </div>
-                  </div>
-                ))}
+          {/* Issues Board */}
+          <div className={styles.boardSection}>
+            <div className={styles.boardHeader}>
+              <h4 className={styles.sectionTitle} style={{ margin: 0 }}>
+                <UnorderedListOutlined className={styles.sectionIcon} />
+                Issues Board
+                {!issuesLoading && (
+                  <span className={styles.issueCountChip}>{issues.length}</span>
+                )}
+              </h4>
+              <div className={styles.boardHeaderActions}>
+                <Tooltip title="Refresh issues">
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<ReloadOutlined />}
+                    onClick={fetchIssues}
+                    loading={issuesLoading}
+                    style={{ color: '#5e6c84' }}
+                  />
+                </Tooltip>
               </div>
             </div>
+
+            {/* Filters */}
+            {!issuesError && (
+              <div className={styles.filtersRow}>
+                <BoardFilters
+                  filters={filters}
+                  onChange={setFilters}
+                  members={members}
+                  totalIssues={issues.length}
+                  filteredCount={filteredIssues.length}
+                />
+              </div>
+            )}
+
+            {/* Board */}
+            <KanbanBoard
+              issues={filteredIssues}
+              members={members}
+              projectKey={project.key}
+              loading={issuesLoading}
+              error={issuesError}
+              onRetry={fetchIssues}
+              onIssueClick={(issue) => setSelectedIssueId(issue.id)}
+            />
           </div>
         </Col>
 
         {/* Right: Sidebar */}
         <Col xs={24} lg={7}>
           <div className={styles.rightSidebar}>
-            {/* Details Card */}
+            {/* Details card */}
             <div className={styles.sidebarCard}>
               <h4 className={styles.sidebarTitle}>
                 <InfoCircleOutlined className={styles.sidebarIcon} />
@@ -368,6 +411,16 @@ const ProjectPage: React.FC = () => {
                     )}
                   </span>
                 </div>
+                <div className={styles.metaRow}>
+                  <span className={styles.metaLabel}>Issues</span>
+                  <span className={styles.metaValue}>
+                    {issuesLoading ? (
+                      <Skeleton.Input active size="small" style={{ width: 40 }} />
+                    ) : (
+                      <span className={styles.memberCountBadge}>{issues.length}</span>
+                    )}
+                  </span>
+                </div>
                 {myRole && (
                   <div className={styles.metaRow}>
                     <span className={styles.metaLabel}>Your Role</span>
@@ -391,7 +444,7 @@ const ProjectPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Team Members Card */}
+            {/* Team Members card */}
             <div className={styles.sidebarCard}>
               <div className={styles.teamHeader}>
                 <h4 className={styles.sidebarTitle} style={{ margin: 0, border: 'none', paddingBottom: 0 }}>
@@ -442,11 +495,7 @@ const ProjectPage: React.FC = () => {
                   message={membersError}
                   showIcon
                   style={{ borderRadius: 6 }}
-                  action={
-                    <Button size="small" onClick={fetchMembers}>
-                      Retry
-                    </Button>
-                  }
+                  action={<Button size="small" onClick={fetchMembers}>Retry</Button>}
                 />
               ) : (
                 <TeamMembersSection
@@ -468,13 +517,14 @@ const ProjectPage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Modals */}
+      {/* ── Modals & Drawers ────────────────────────────────────────────── */}
       <EditProjectModal
         open={editModalOpen}
         project={project}
         onCancel={() => setEditModalOpen(false)}
         onSuccess={handleEditSuccess}
       />
+
       {projectId && (
         <InviteMemberModal
           open={inviteModalOpen}
@@ -483,6 +533,26 @@ const ProjectPage: React.FC = () => {
           onSuccess={handleInviteSuccess}
         />
       )}
+
+      {projectId && (
+        <CreateIssueModal
+          open={createIssueOpen}
+          projectId={projectId}
+          members={members}
+          onCancel={() => setCreateIssueOpen(false)}
+          onSuccess={handleIssueCreated}
+        />
+      )}
+
+      <IssueDrawer
+        issueId={selectedIssueId}
+        members={members}
+        myRole={myRole}
+        onClose={() => setSelectedIssueId(null)}
+        onIssueUpdated={handleIssueUpdated}
+        onIssueStatusChanged={handleIssueStatusChanged}
+        onIssueDeleted={handleIssueDeleted}
+      />
     </div>
   );
 };
