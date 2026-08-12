@@ -1,0 +1,57 @@
+.container {
+  padding: 4px 0;
+}
+
+.container :global(.ant-timeline-item-label) {
+  width: 60px !important;
+  font-size: 11px;
+  color: #8993a4;
+}
+
+.container :global(.ant-timeline-item-tail) {
+  border-left-color: #ebecf0;
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.skeletonRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: #8993a4;
+}
+
+.emptyIcon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.activityItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+
+.activityText {
+  font-size: 12.5px;
+  color: #344563;
+  line-height: 1.5;
+}
+
+.activityTime {
+  font-size: 11px;
+  color: #8993a4;
+  cursor: default;
+}

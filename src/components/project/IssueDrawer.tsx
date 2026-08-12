@@ -12,6 +12,7 @@ import {
   Tooltip,
   Divider,
   Popconfirm,
+  Tabs,
 } from 'antd';
 import {
   EditOutlined,
@@ -22,17 +23,21 @@ import {
   UserOutlined,
   FlagOutlined,
   CheckCircleOutlined,
+  MessageOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 import axiosInstance from '../../api/axios';
 import type { Issue, IssueStatus } from '../../types/issue';
 import { PRIORITY_CONFIG, STATUS_LABELS } from '../../types/issue';
 import type { ProjectMember, ProjectRole } from '../../types/project';
+import { useAuth } from '../../context/AuthContext';
+import IssueComments from './IssueComments';
+import IssueActivityTimeline from './IssueActivityTimeline';
 import styles from './IssueDrawer.module.css';
 
 const { TextArea } = Input;
 const { Option } = Select;
 
-// Import the allowed transitions object (we re-define it here to avoid import issues)
 const TRANSITIONS: Record<IssueStatus, IssueStatus[]> = {
   TODO:        ['IN_PROGRESS'],
   IN_PROGRESS: ['DONE', 'TODO'],
@@ -94,28 +99,35 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
   onIssueStatusChanged,
   onIssueDeleted,
 }) => {
+  const { user } = useAuth();
   const [form] = Form.useForm();
-  const [issue, setIssue] = useState<Issue | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [issue, setIssue]               = useState<Issue | null>(null);
+  const [loading, setLoading]           = useState(false);
+  const [editMode, setEditMode]         = useState(false);
+  const [saving, setSaving]             = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting]         = useState(false);
+  const [activeTab, setActiveTab]       = useState('comments');
+  const [activityTrigger, setActivityTrigger] = useState(0);
 
-  // ── Fetch full issue details ──────────────────────────────────────────────
+  const refreshActivity = useCallback(() => {
+    setActivityTrigger((t) => t + 1);
+  }, []);
+
   const fetchIssue = useCallback(async () => {
     if (!issueId) return;
     setLoading(true);
     setIssue(null);
     setEditMode(false);
+    setActiveTab('comments');
     try {
       const res = await axiosInstance.get<Issue>(`/issues/${issueId}`);
       setIssue(res.data);
       form.setFieldsValue({
-        title: res.data.title,
+        title:       res.data.title,
         description: res.data.description || '',
-        priority: res.data.priority,
-        assigneeId: res.data.assigneeId || undefined,
+        priority:    res.data.priority,
+        assigneeId:  res.data.assigneeId || undefined,
       });
     } catch (err: any) {
       notification.error({
@@ -132,7 +144,6 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
     if (issueId) fetchIssue();
   }, [issueId, fetchIssue]);
 
-  // ── Save edits ────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!issue) return;
     try {
@@ -145,20 +156,25 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
         payload.description = values.description || '';
       }
       if (values.priority !== issue.priority) payload.priority = values.priority;
-      // Handle assignee: null means "remove"
       const newAssignee = values.assigneeId || null;
       if (newAssignee !== issue.assigneeId) payload.assigneeId = newAssignee;
+
+      if (Object.keys(payload).length === 0) {
+        setEditMode(false);
+        return;
+      }
 
       const res = await axiosInstance.patch<Issue>(`/issues/${issue.id}`, payload);
       setIssue(res.data);
       form.setFieldsValue({
-        title: res.data.title,
+        title:       res.data.title,
         description: res.data.description || '',
-        priority: res.data.priority,
-        assigneeId: res.data.assigneeId || undefined,
+        priority:    res.data.priority,
+        assigneeId:  res.data.assigneeId || undefined,
       });
       setEditMode(false);
       onIssueUpdated(res.data);
+      refreshActivity();
 
       notification.success({
         message: 'Issue Updated',
@@ -166,7 +182,7 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
         placement: 'topRight',
       });
     } catch (err: any) {
-      if (err?.errorFields) return; // validation error, do nothing
+      if (err?.errorFields) return;
       notification.error({
         message: 'Save Failed',
         description: err.response?.data?.message || err.message,
@@ -180,16 +196,15 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
   const handleCancelEdit = () => {
     if (issue) {
       form.setFieldsValue({
-        title: issue.title,
+        title:       issue.title,
         description: issue.description || '',
-        priority: issue.priority,
-        assigneeId: issue.assigneeId || undefined,
+        priority:    issue.priority,
+        assigneeId:  issue.assigneeId || undefined,
       });
     }
     setEditMode(false);
   };
 
-  // ── Status change ─────────────────────────────────────────────────────────
   const handleStatusChange = async (newStatus: IssueStatus) => {
     if (!issue) return;
     setStatusUpdating(true);
@@ -197,6 +212,7 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
       await axiosInstance.patch(`/issues/${issue.id}/status`, { status: newStatus });
       setIssue((prev) => prev ? { ...prev, status: newStatus } : prev);
       onIssueStatusChanged(issue.id, newStatus);
+      refreshActivity();
       notification.success({
         message: 'Status Updated',
         description: `Moved to "${STATUS_LABELS[newStatus]}"`,
@@ -213,7 +229,6 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
     }
   };
 
-  // ── Delete issue ──────────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!issue) return;
     setDeleting(true);
@@ -237,25 +252,59 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
     }
   };
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
   const getMember = (userId: string | null | undefined) =>
     userId ? members.find((m) => m.userId === userId) : null;
 
   const isEditable = canEdit(myRole);
-  const isViewer = myRole === 'VIEWER';
+  const isViewer   = myRole === 'VIEWER';
 
-  const allowedStatuses = issue ? TRANSITIONS[issue.status] : [];
+  const allowedStatuses  = issue ? TRANSITIONS[issue.status] : [];
   const statusOptions: IssueStatus[] = issue
     ? ([issue.status, ...allowedStatuses] as IssueStatus[])
     : [];
 
   const priorityConf = issue ? PRIORITY_CONFIG[issue.priority] : null;
 
+  const tabItems = issueId && issue ? [
+    {
+      key: 'comments',
+      label: (
+        <span>
+          <MessageOutlined style={{ marginRight: 4 }} />
+          Comments
+        </span>
+      ),
+      children: (
+        <IssueComments
+          issueId={issueId}
+          myRole={myRole}
+          currentUserId={user?.id ?? ''}
+          onCommentChange={refreshActivity}
+        />
+      ),
+    },
+    {
+      key: 'activity',
+      label: (
+        <span>
+          <HistoryOutlined style={{ marginRight: 4 }} />
+          Activity
+        </span>
+      ),
+      children: (
+        <IssueActivityTimeline
+          issueId={issueId}
+          refreshTrigger={activityTrigger}
+        />
+      ),
+    },
+  ] : [];
+
   return (
     <Drawer
       open={!!issueId}
       onClose={() => { setEditMode(false); onClose(); }}
-      width={520}
+      width={580}
       title={null}
       closable={false}
       bodyStyle={{ padding: 0 }}
@@ -267,7 +316,7 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
         </div>
       ) : issue ? (
         <div className={styles.drawerContent}>
-          {/* ── Header ── */}
+          {/* Header */}
           <div className={styles.drawerHeader}>
             <div className={styles.headerLeft}>
               <span className={styles.issueKeyChip}>
@@ -327,7 +376,7 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
             </div>
           </div>
 
-          {/* ── Form / View ── */}
+          {/* Form / View */}
           <div className={styles.body}>
             <Form form={form} layout="vertical">
               {/* Title */}
@@ -542,7 +591,18 @@ const IssueDrawer: React.FC<IssueDrawerProps> = ({
             </Form>
           </div>
 
-          {/* ── Footer: Delete (PROJECT_ADMIN only) ── */}
+          {/* Comments + Activity Tabs */}
+          <div className={styles.tabsSection}>
+            <Tabs
+              activeKey={activeTab}
+              onChange={setActiveTab}
+              size="small"
+              className={styles.drawerTabs}
+              items={tabItems}
+            />
+          </div>
+
+          {/* Footer: Delete (PROJECT_ADMIN only) */}
           {myRole === 'PROJECT_ADMIN' && (
             <div className={styles.drawerFooter}>
               <Popconfirm

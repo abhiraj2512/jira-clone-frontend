@@ -84,9 +84,9 @@
 /* ── Body ───────────────────────────────────────────────── */
 
 .body {
-  flex: 1;
   overflow-y: auto;
   padding: 20px 24px;
+  flex-shrink: 0;
 }
 
 .fieldLabel {
@@ -200,4 +200,35 @@
   font-weight: 500 !important;
 }
 
+/* ── Tabs Section ────────────────────────────────────────── */
 
+.tabsSection {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #f4f5f7;
+}
+
+.drawerTabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawerTabs :global(.ant-tabs-nav) {
+  padding: 0 24px;
+  margin-bottom: 0;
+  background: #fafbfc;
+  flex-shrink: 0;
+}
+
+.drawerTabs :global(.ant-tabs-content-holder) {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+.drawerTabs :global(.ant-tabs-tabpane) {
+  height: 100%;
+}
