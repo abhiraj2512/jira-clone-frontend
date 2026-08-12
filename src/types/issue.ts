@@ -10,6 +10,7 @@ export interface IssueSummary {
   priority: IssuePriority;
   assigneeId: string | null;
   createdAt: string;
+  updatedAt?: string;
 }
 
 /** Full shape returned by GET /issues/:id */

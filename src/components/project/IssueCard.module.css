@@ -1,43 +1,93 @@
+/* ── Card ───────────────────────────────────────────────────────────────────── */
 .card {
   background: #ffffff;
-  border-radius: 6px;
-  padding: 12px 14px;
-  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.1);
-  border: 1px solid #e5e4e7;
-  cursor: pointer;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  border-radius: 8px;
+  padding: 13px 14px 11px;
+  box-shadow: 0 1px 2px rgba(9, 30, 66, 0.08), 0 0 0 1px rgba(9, 30, 66, 0.08);
+  border: 1.5px solid transparent;
+  cursor: grab;
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
   outline: none;
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
 }
 
 .card:hover {
-  box-shadow: 0 3px 8px rgba(9, 30, 66, 0.15);
+  box-shadow: 0 4px 12px rgba(9, 30, 66, 0.15);
   border-color: #4c9aff;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .card:focus-visible {
-  box-shadow: 0 0 0 2px #4c9aff;
+  box-shadow: 0 0 0 3px rgba(76, 154, 255, 0.5);
+  border-color: #4c9aff;
 }
 
+/* State while THIS card is in its original slot (ghost) */
+.cardDragging {
+  opacity: 0.35;
+  border-color: #4c9aff;
+  cursor: grabbing;
+}
+
+/* ── Title ──────────────────────────────────────────────────────────────────── */
 .title {
   font-size: 13px;
   color: #172b4d;
   font-weight: 500;
-  margin: 0 0 10px 0;
+  margin: 0;
   line-height: 1.45;
   display: -webkit-box;
-  -webkit-line-clamp: 3;          /* WebKit/Blink browsers (Chrome, Safari, Edge) */
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  line-clamp: 3;                  /* Standard property for future compatibility */
+  line-clamp: 3;
   overflow: hidden;
 }
 
+/* ── Meta row (status + priority) ───────────────────────────────────────────── */
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.statusTag {
+  line-height: 1.4 !important;
+  cursor: inherit !important;
+}
+
+/* ── Priority badge ─────────────────────────────────────────────────────────── */
+.priorityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.2px;
+}
+
+.priorityLabel {
+  letter-spacing: 0.2px;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────────── */
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
+  margin-top: 2px;
 }
 
 .footerLeft {
@@ -48,6 +98,7 @@
   flex: 1;
 }
 
+/* ── Issue key ──────────────────────────────────────────────────────────────── */
 .issueKey {
   font-size: 10px;
   font-weight: 700;
@@ -62,18 +113,13 @@
   gap: 2px;
 }
 
-.priorityBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+/* ── Updated date ───────────────────────────────────────────────────────────── */
+.updatedDate {
   font-size: 10px;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 3px;
+  color: #8993a4;
   white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.priorityLabel {
-  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 500;
 }

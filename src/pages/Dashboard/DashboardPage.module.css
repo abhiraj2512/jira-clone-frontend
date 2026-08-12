@@ -1,3 +1,4 @@
+/* ── Container ──────────────────────────────────────────────────────────────── */
 .container {
   padding: 40px;
   max-width: 1400px;
@@ -5,6 +6,7 @@
   min-height: 100%;
 }
 
+/* ── Header ─────────────────────────────────────────────────────────────────── */
 .headerSection {
   margin-bottom: 32px;
   border-bottom: 1px solid #e5e4e7;
@@ -13,7 +15,7 @@
 
 .pageTitle {
   font-size: 28px !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   color: #172b4d !important;
   margin: 0 0 6px 0 !important;
 }
@@ -23,12 +25,80 @@
   color: #5e6c84;
 }
 
-.cardGrid {
-  margin-top: 16px;
+/* ── Analytics Stats Section ────────────────────────────────────────────────── */
+.statsSection {
+  margin-bottom: 40px;
 }
 
+.statsCard {
+  border-radius: 12px;
+  border: 1px solid #e5e4e7;
+  background: #ffffff;
+  padding: 18px 20px;
+  height: 100%;
+  min-height: 110px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.statsCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+
+.statsCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(9, 30, 66, 0.1);
+}
+
+.statsCardProjects::before  { background: linear-gradient(90deg, #172b4d, #344563); }
+.statsCardTotal::before     { background: linear-gradient(90deg, #5243aa, #6554c0); }
+.statsCardTodo::before      { background: linear-gradient(90deg, #5e6c84, #8993a4); }
+.statsCardProgress::before  { background: linear-gradient(90deg, #0052cc, #4c9aff); }
+.statsCardDone::before      { background: linear-gradient(90deg, #00875a, #36b37e); }
+.statsCardRate::before      { background: linear-gradient(90deg, #ff8b00, #ffab00); }
+
+.statsIcon {
+  font-size: 20px;
+  color: #172b4d;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+/* ── Projects section ───────────────────────────────────────────────────────── */
+.projectsSection {
+  /* spacing handled by container */
+}
+
+.sectionHeader {
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f4f5f7;
+}
+
+.sectionTitle {
+  font-size: 17px !important;
+  font-weight: 700 !important;
+  color: #172b4d !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+}
+
+.cardGrid {
+  margin-top: 4px;
+}
+
+/* ── Project Card ───────────────────────────────────────────────────────────── */
 .projectCard {
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid #e5e4e7;
   background: #ffffff;
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -36,45 +106,62 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .projectCard:hover {
   transform: translateY(-4px);
   border-color: #4c9aff;
-  box-shadow: 0 8px 16px rgba(9, 30, 66, 0.08);
+  box-shadow: 0 8px 20px rgba(9, 30, 66, 0.1);
 }
 
-.projectCardTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: #172b4d;
+.projectCard:focus-visible {
+  outline: 2px solid #4c9aff;
+  outline-offset: 2px;
 }
 
-.projectKey {
-  font-size: 11px;
-  font-weight: 700;
-  background-color: #deebff;
-  color: #0052cc;
-  padding: 2px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.5px;
+.cardAccentBar {
+  height: 4px;
+  background: linear-gradient(90deg, #0052cc, #4c9aff);
+  border-radius: 0;
 }
 
 .cardBody {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 16px 24px;
+  padding: 16px 20px;
+}
+
+.projectCardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #172b4d;
+  line-height: 1.3;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.projectKey {
+  font-size: 10px;
+  font-weight: 700;
+  background-color: #deebff;
+  color: #0052cc;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .descriptionWrapper {
   flex: 1;
-  margin-bottom: 16px;
-  min-height: 48px;
+  margin-bottom: 14px;
+  min-height: 44px;
 }
 
 .description {
-  font-size: 14px;
+  font-size: 13px;
   color: #5e6c84;
   line-height: 1.5;
   display: -webkit-box;
@@ -82,11 +169,12 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  margin: 0;
 }
 
 .cardFooter {
   border-top: 1px solid #f4f5f7;
-  padding-top: 12px;
+  padding-top: 10px;
   margin-top: auto;
   display: flex;
   justify-content: space-between;
@@ -94,6 +182,34 @@
 }
 
 .dateText {
-  font-size: 12px;
+  font-size: 11px;
   color: #8993a4;
+}
+
+.viewLink {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0052cc;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.projectCard:hover .viewLink {
+  opacity: 1;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 16px;
+  }
+
+  .pageTitle {
+    font-size: 22px !important;
+  }
+
+  .statsCard {
+    min-height: 90px;
+    padding: 14px;
+  }
 }

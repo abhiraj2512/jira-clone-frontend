@@ -289,6 +289,60 @@
   font-style: italic;
 }
 
+/* ── Analytics card ─────────────────────────────────────────────────────────── */
+
+.analyticsCard {
+  border-radius: 10px;
+  border: 1px solid #e5e4e7;
+  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.analyticsStatBox {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #ebecf0;
+  padding: 12px 14px;
+  transition: box-shadow 0.15s ease;
+}
+
+.analyticsStatBox:hover {
+  box-shadow: 0 2px 8px rgba(9, 30, 66, 0.08);
+}
+
+.completionSection {
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #ebecf0;
+  padding: 12px 14px;
+}
+
+.completionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.completionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5e6c84;
+}
+
+.completionPct {
+  font-size: 16px;
+  font-weight: 800;
+  color: #172b4d;
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 
 @media (max-width: 991px) {

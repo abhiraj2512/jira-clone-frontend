@@ -13,6 +13,8 @@ import {
   Skeleton,
   Alert,
   Divider,
+  Statistic,
+  Progress,
 } from 'antd';
 import {
   EditOutlined,
@@ -26,6 +28,8 @@ import {
   ReloadOutlined,
   UserAddOutlined,
   UnorderedListOutlined,
+  BarChartOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import axiosInstance from '../../api/axios';
 import type { Project, ProjectMember, ProjectRole } from '../../types/project';
@@ -377,6 +381,8 @@ const ProjectPage: React.FC = () => {
               error={issuesError}
               onRetry={fetchIssues}
               onIssueClick={(issue) => setSelectedIssueId(issue.id)}
+              onStatusChange={handleIssueStatusChanged}
+              onCreateIssue={() => setCreateIssueOpen(true)}
             />
           </div>
         </Col>
@@ -384,6 +390,68 @@ const ProjectPage: React.FC = () => {
         {/* Right: Sidebar */}
         <Col xs={24} lg={7}>
           <div className={styles.rightSidebar}>
+            {/* Analytics card */}
+            {!issuesLoading && (
+              <div className={styles.analyticsCard}>
+                <h4 className={styles.sidebarTitle} style={{ marginBottom: 16 }}>
+                  <BarChartOutlined className={styles.sidebarIcon} />
+                  Analytics
+                </h4>
+                <div className={styles.analyticsGrid}>
+                  <div className={styles.analyticsStatBox}>
+                    <Statistic
+                      title="Total"
+                      value={issues.length}
+                      valueStyle={{ fontSize: 22, fontWeight: 700, color: '#172b4d' }}
+                    />
+                  </div>
+                  <div className={styles.analyticsStatBox}>
+                    <Statistic
+                      title="Done"
+                      value={issues.filter(i => i.status === 'DONE').length}
+                      valueStyle={{ fontSize: 22, fontWeight: 700, color: '#00875a' }}
+                      prefix={<CheckCircleOutlined style={{ fontSize: 16, color: '#00875a' }} />}
+                    />
+                  </div>
+                  <div className={styles.analyticsStatBox}>
+                    <Statistic
+                      title="In Progress"
+                      value={issues.filter(i => i.status === 'IN_PROGRESS').length}
+                      valueStyle={{ fontSize: 22, fontWeight: 700, color: '#0052cc' }}
+                    />
+                  </div>
+                  <div className={styles.analyticsStatBox}>
+                    <Statistic
+                      title="To Do"
+                      value={issues.filter(i => i.status === 'TODO').length}
+                      valueStyle={{ fontSize: 22, fontWeight: 700, color: '#5e6c84' }}
+                    />
+                  </div>
+                </div>
+                <div className={styles.completionSection}>
+                  <div className={styles.completionHeader}>
+                    <span className={styles.completionLabel}>Completion</span>
+                    <span className={styles.completionPct}>
+                      {issues.length === 0
+                        ? '0%'
+                        : `${Math.round((issues.filter(i => i.status === 'DONE').length / issues.length) * 100)}%`}
+                    </span>
+                  </div>
+                  <Progress
+                    percent={
+                      issues.length === 0
+                        ? 0
+                        : Math.round((issues.filter(i => i.status === 'DONE').length / issues.length) * 100)
+                    }
+                    strokeColor={{ '0%': '#0052cc', '100%': '#00875a' }}
+                    trailColor="#ebecf0"
+                    showInfo={false}
+                    strokeWidth={8}
+                    style={{ margin: '8px 0 0' }}
+                  />
+                </div>
+              </div>
+            )}
             {/* Details card */}
             <div className={styles.sidebarCard}>
               <h4 className={styles.sidebarTitle}>
