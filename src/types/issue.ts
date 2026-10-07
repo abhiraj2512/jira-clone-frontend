@@ -9,6 +9,7 @@ export interface IssueSummary {
   status: IssueStatus;
   priority: IssuePriority;
   assigneeId: string | null;
+  sprintId?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -19,6 +20,7 @@ export interface Issue extends IssueSummary {
   reporterId: string;
   projectId: string;
   issueKey: string | null;
+  sprintId: string | null;
   updatedAt: string;
 }
 

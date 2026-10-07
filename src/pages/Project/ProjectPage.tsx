@@ -15,6 +15,7 @@ import {
   Divider,
   Statistic,
   Progress,
+  Select,
 } from 'antd';
 import {
   EditOutlined,
@@ -44,10 +45,12 @@ import KanbanBoard from '../../components/project/KanbanBoard';
 import CreateIssueModal from '../../components/project/CreateIssueModal';
 import IssueDrawer from '../../components/project/IssueDrawer';
 import BoardFilters from '../../components/project/BoardFilters';
+import SprintSection from '../../components/project/SprintSection';
 import type { FilterState } from '../../components/project/BoardFilters';
 import styles from './ProjectPage.module.css';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
 
 // ── RBAC helpers ──────────────────────────────────────────────────────────────
 const ROLE_CONFIG: Record<
@@ -106,9 +109,21 @@ const ProjectPage: React.FC = () => {
   const [issuesLoading, setIssuesLoading] = useState(false);
   const [issuesError, setIssuesError] = useState<string | null>(null);
 
+  // ── Sprint board selector ─────────────────────────────────────────────────
+  // 'ALL' = show all issues on board, or a sprintId to filter to that sprint
+  const [selectedSprintId, setSelectedSprintId] = useState<string | 'ALL'>('ALL');
+
   // ── Filters ──────────────────────────────────────────────────────────────
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
-  const filteredIssues = useMemo(() => applyFilters(issues, filters), [issues, filters]);
+
+  // Issues to show on the board: optionally filtered by selected sprint
+  const boardIssues = useMemo(() => {
+    let base = issues;
+    if (selectedSprintId !== 'ALL') {
+      base = issues.filter((i) => i.sprintId === selectedSprintId);
+    }
+    return applyFilters(base, filters);
+  }, [issues, filters, selectedSprintId]);
 
   // ── Modal / Drawer states ─────────────────────────────────────────────────
   const [editModalOpen,   setEditModalOpen]   = useState(false);
@@ -208,6 +223,7 @@ const ProjectPage: React.FC = () => {
               status: updated.status,
               priority: updated.priority,
               assigneeId: updated.assigneeId,
+              sprintId: updated.sprintId,
             }
           : i,
       ),
@@ -223,6 +239,25 @@ const ProjectPage: React.FC = () => {
   const handleIssueDeleted = (issueId: string) => {
     setIssues((prev) => prev.filter((i) => i.id !== issueId));
   };
+
+  // Called when an issue's sprint assignment changes
+  const handleIssueSprintChanged = useCallback((issueId: string, sprintId: string | null) => {
+    if (issueId === '__refresh__') {
+      // Sprint completed: re-fetch all issues since multiple may have moved
+      fetchIssues();
+      return;
+    }
+    setIssues((prev) =>
+      prev.map((i) => (i.id === issueId ? { ...i, sprintId } : i)),
+    );
+  }, [fetchIssues]);
+
+  // Called from SprintSection when user clicks "View Board" on a sprint
+  const handleSprintBoardSelect = useCallback((sprintId: string | null) => {
+    setSelectedSprintId(sprintId ?? 'ALL');
+    // Scroll to board
+    document.getElementById('kanban-board-section')?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
   // ── Guards ────────────────────────────────────────────────────────────────
   if (loading && !project) return <PageLoader />;
@@ -245,6 +280,9 @@ const ProjectPage: React.FC = () => {
     year: 'numeric', month: 'long', day: 'numeric',
   });
   const roleConfig = myRole ? ROLE_CONFIG[myRole] : null;
+
+  // For sprint selector: gather unique sprint info from issues
+  const sprintIdsInIssues = [...new Set(issues.map((i) => i.sprintId).filter(Boolean) as string[])];
 
   return (
     <div className={styles.container}>
@@ -336,16 +374,32 @@ const ProjectPage: React.FC = () => {
           </div>
 
           {/* Issues Board */}
-          <div className={styles.boardSection}>
+          <div className={styles.boardSection} id="kanban-board-section">
             <div className={styles.boardHeader}>
               <h4 className={styles.sectionTitle} style={{ margin: 0 }}>
                 <UnorderedListOutlined className={styles.sectionIcon} />
                 Issues Board
                 {!issuesLoading && (
-                  <span className={styles.issueCountChip}>{issues.length}</span>
+                  <span className={styles.issueCountChip}>{boardIssues.length}</span>
                 )}
               </h4>
               <div className={styles.boardHeaderActions}>
+                {/* Sprint Selector */}
+                <Select
+                  size="small"
+                  value={selectedSprintId}
+                  onChange={(v) => setSelectedSprintId(v)}
+                  style={{ minWidth: 160, borderRadius: 6, fontSize: 12 }}
+                  popupMatchSelectWidth={false}
+                >
+                  <Option value="ALL">All Issues</Option>
+                  {sprintIdsInIssues.map((sid) => (
+                    <Option key={sid} value={sid}>
+                      Sprint: {sid.slice(0, 8).toUpperCase()}
+                    </Option>
+                  ))}
+                  <Option value="__backlog__">Backlog Only</Option>
+                </Select>
                 <Tooltip title="Refresh issues">
                   <Button
                     type="text"
@@ -367,14 +421,16 @@ const ProjectPage: React.FC = () => {
                   onChange={setFilters}
                   members={members}
                   totalIssues={issues.length}
-                  filteredCount={filteredIssues.length}
+                  filteredCount={boardIssues.length}
                 />
               </div>
             )}
 
             {/* Board */}
             <KanbanBoard
-              issues={filteredIssues}
+              issues={selectedSprintId === '__backlog__'
+                ? applyFilters(issues.filter((i) => !i.sprintId), filters)
+                : boardIssues}
               members={members}
               projectKey={project.key}
               loading={issuesLoading}
@@ -385,6 +441,20 @@ const ProjectPage: React.FC = () => {
               onCreateIssue={() => setCreateIssueOpen(true)}
             />
           </div>
+
+          {/* Sprint & Backlog Section */}
+          {projectId && (
+            <SprintSection
+              projectId={projectId}
+              projectKey={project.key}
+              allIssues={issues}
+              members={members}
+              myRole={myRole}
+              onIssueClick={(issue) => setSelectedIssueId(issue.id)}
+              onIssueSprintChanged={handleIssueSprintChanged}
+              onSprintBoardSelect={handleSprintBoardSelect}
+            />
+          )}
         </Col>
 
         {/* Right: Sidebar */}
