@@ -16,6 +16,7 @@ import {
   Statistic,
   Progress,
   Select,
+  Tabs,
 } from 'antd';
 import {
   EditOutlined,
@@ -40,7 +41,9 @@ import PageLoader from '../../components/common/PageLoader';
 import ErrorState from '../../components/common/ErrorState';
 import EditProjectModal from '../../components/project/EditProjectModal';
 import InviteMemberModal from '../../components/project/InviteMemberModal';
+import AddMemberModal from '../../components/project/AddMemberModal';
 import TeamMembersSection from '../../components/project/TeamMembersSection';
+import TeamManagementSection from '../../components/project/TeamManagementSection';
 import KanbanBoard from '../../components/project/KanbanBoard';
 import CreateIssueModal from '../../components/project/CreateIssueModal';
 import IssueDrawer from '../../components/project/IssueDrawer';
@@ -126,10 +129,12 @@ const ProjectPage: React.FC = () => {
   }, [issues, filters, selectedSprintId]);
 
   // ── Modal / Drawer states ─────────────────────────────────────────────────
-  const [editModalOpen,   setEditModalOpen]   = useState(false);
-  const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [createIssueOpen, setCreateIssueOpen] = useState(false);
-  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [editModalOpen,       setEditModalOpen]       = useState(false);
+  const [inviteModalOpen,     setInviteModalOpen]     = useState(false);
+  const [addMemberModalOpen,  setAddMemberModalOpen]  = useState(false);
+  const [createIssueOpen,     setCreateIssueOpen]     = useState(false);
+  const [selectedIssueId,     setSelectedIssueId]     = useState<string | null>(null);
+  const [activeTab,           setActiveTab]           = useState<'board' | 'team'>('board');
 
   // ── Fetch project ─────────────────────────────────────────────────────────
   const fetchProject = useCallback(async () => {
@@ -326,10 +331,10 @@ const ProjectPage: React.FC = () => {
           {canInviteMembers(myRole) && (
             <Button
               icon={<UserAddOutlined />}
-              onClick={() => setInviteModalOpen(true)}
+              onClick={() => setAddMemberModalOpen(true)}
               className={styles.inviteBtn}
             >
-              Invite Member
+              Add Member
             </Button>
           )}
           {canEditProject(myRole) && (
@@ -358,10 +363,58 @@ const ProjectPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main layout */}
-      <Row gutter={[24, 24]}>
-        {/* Left: Description + Issues Board */}
-        <Col xs={24} lg={17}>
+      {/* Page Navigation Tabs */}
+      <div style={{ marginBottom: 20 }}>
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => setActiveTab(key as 'board' | 'team')}
+          items={[
+            {
+              key: 'board',
+              label: (
+                <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <UnorderedListOutlined /> Board & Sprints
+                </span>
+              ),
+            },
+            {
+              key: 'team',
+              label: (
+                <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <TeamOutlined /> Team
+                  <span
+                    style={{
+                      backgroundColor: activeTab === 'team' ? '#deebff' : '#ebecf0',
+                      color: activeTab === 'team' ? '#0052cc' : '#42526e',
+                      padding: '1px 6px',
+                      borderRadius: 10,
+                      fontSize: 11,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {members.length}
+                  </span>
+                </span>
+              ),
+            },
+          ]}
+        />
+      </div>
+
+      {activeTab === 'team' ? (
+        <TeamManagementSection
+          projectId={projectId!}
+          members={members}
+          loading={membersLoading}
+          myRole={myRole}
+          currentUserId={user?.id ?? ''}
+          onRefresh={fetchMembers}
+        />
+      ) : (
+        /* Main layout */
+        <Row gutter={[24, 24]}>
+          {/* Left: Description + Issues Board */}
+          <Col xs={24} lg={17}>
           {/* Description */}
           <div className={styles.mainCard}>
             <h4 className={styles.sectionTitle}>
@@ -438,7 +491,8 @@ const ProjectPage: React.FC = () => {
               onRetry={fetchIssues}
               onIssueClick={(issue) => setSelectedIssueId(issue.id)}
               onStatusChange={handleIssueStatusChanged}
-              onCreateIssue={() => setCreateIssueOpen(true)}
+              onCreateIssue={canCreateIssue(myRole) ? () => setCreateIssueOpen(true) : undefined}
+              myRole={myRole}
             />
           </div>
 
@@ -604,12 +658,12 @@ const ProjectPage: React.FC = () => {
                     />
                   </Tooltip>
                   {canInviteMembers(myRole) && (
-                    <Tooltip title="Invite member">
+                    <Tooltip title="Add member">
                       <Button
                         type="primary"
                         size="small"
                         icon={<PlusOutlined />}
-                        onClick={() => setInviteModalOpen(true)}
+                        onClick={() => setAddMemberModalOpen(true)}
                         style={{
                           background: '#0052cc',
                           borderColor: '#0052cc',
@@ -618,7 +672,7 @@ const ProjectPage: React.FC = () => {
                           fontSize: 12,
                         }}
                       >
-                        Invite
+                        Add
                       </Button>
                     </Tooltip>
                   )}
@@ -640,6 +694,7 @@ const ProjectPage: React.FC = () => {
                   members={members}
                   loading={membersLoading}
                   currentUserId={user?.id ?? ''}
+                  onManageTeam={() => setActiveTab('team')}
                 />
               )}
 
@@ -654,6 +709,7 @@ const ProjectPage: React.FC = () => {
           </div>
         </Col>
       </Row>
+      )}
 
       {/* ── Modals & Drawers ────────────────────────────────────────────── */}
       <EditProjectModal
@@ -662,6 +718,19 @@ const ProjectPage: React.FC = () => {
         onCancel={() => setEditModalOpen(false)}
         onSuccess={handleEditSuccess}
       />
+
+      {projectId && (
+        <AddMemberModal
+          open={addMemberModalOpen}
+          projectId={projectId}
+          existingMembers={members}
+          onCancel={() => setAddMemberModalOpen(false)}
+          onSuccess={() => {
+            setAddMemberModalOpen(false);
+            fetchMembers();
+          }}
+        />
+      )}
 
       {projectId && (
         <InviteMemberModal

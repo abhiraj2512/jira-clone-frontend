@@ -15,9 +15,11 @@ export interface CreateProjectInput {
 export type ProjectRole = 'PROJECT_ADMIN' | 'DEVELOPER' | 'VIEWER';
 
 export interface ProjectMember {
+  id?: string;
   userId: string;
   email: string;
   fullName: string;
   role: ProjectRole;
+  createdAt?: string;
 }
 

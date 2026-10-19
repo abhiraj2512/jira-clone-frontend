@@ -18,7 +18,7 @@ import { PlusOutlined, InboxOutlined } from '@ant-design/icons';
 import axiosInstance from '../../api/axios';
 import IssueCard from './IssueCard';
 import type { IssueSummary, IssueStatus } from '../../types/issue';
-import type { ProjectMember } from '../../types/project';
+import type { ProjectMember, ProjectRole } from '../../types/project';
 import styles from './KanbanBoard.module.css';
 
 interface KanbanColumn {
@@ -62,22 +62,23 @@ interface DraggableCardProps {
   members: ProjectMember[];
   projectKey: string;
   onIssueClick: (issue: IssueSummary) => void;
+  disabled?: boolean;
 }
 
 const DraggableCard: React.FC<DraggableCardProps> = React.memo(
-  ({ issue, members, projectKey, onIssueClick }) => {
+  ({ issue, members, projectKey, onIssueClick, disabled }) => {
     const { attributes, listeners, setNodeRef, transform, isDragging } =
-      useDraggable({ id: issue.id, data: { issue } });
+      useDraggable({ id: issue.id, data: { issue }, disabled });
 
     const style: React.CSSProperties = {
       transform: CSS.Translate.toString(transform),
       opacity: isDragging ? 0.3 : 1,
-      cursor: isDragging ? 'grabbing' : 'grab',
+      cursor: disabled ? 'pointer' : (isDragging ? 'grabbing' : 'grab'),
       touchAction: 'none',
     };
 
     return (
-      <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      <div ref={setNodeRef} style={style} {...(disabled ? {} : listeners)} {...attributes}>
         <IssueCard
           issue={issue}
           members={members}
@@ -100,6 +101,7 @@ interface DroppableColumnProps {
   onIssueClick: (issue: IssueSummary) => void;
   onCreateIssue?: () => void;
   isOver: boolean;
+  isViewer?: boolean;
 }
 
 const DroppableColumn: React.FC<DroppableColumnProps> = ({
@@ -111,8 +113,9 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
   onIssueClick,
   onCreateIssue,
   isOver,
+  isViewer,
 }) => {
-  const { setNodeRef } = useDroppable({ id: col.status });
+  const { setNodeRef } = useDroppable({ id: col.status, disabled: isViewer });
 
   return (
     <div
@@ -174,6 +177,7 @@ const DroppableColumn: React.FC<DroppableColumnProps> = ({
               members={members}
               projectKey={projectKey}
               onIssueClick={onIssueClick}
+              disabled={isViewer}
             />
           ))
         )}
@@ -206,6 +210,7 @@ interface KanbanBoardProps {
   onIssueClick: (issue: IssueSummary) => void;
   onStatusChange: (issueId: string, newStatus: IssueStatus) => void;
   onCreateIssue?: () => void;
+  myRole?: ProjectRole | null;
 }
 
 const KanbanBoard: React.FC<KanbanBoardProps> = ({
@@ -218,7 +223,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onIssueClick,
   onStatusChange,
   onCreateIssue,
+  myRole,
 }) => {
+  const isViewer = myRole === 'VIEWER';
   const [activeIssue, setActiveIssue] = useState<IssueSummary | null>(null);
   const [overId, setOverId] = useState<IssueStatus | null>(null);
 
@@ -242,19 +249,23 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const allIssuesEmpty = issues.length === 0;
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    if (isViewer) return;
     const issue = event.active.data.current?.issue as IssueSummary | undefined;
     setActiveIssue(issue ?? null);
-  }, []);
+  }, [isViewer]);
 
   const handleDragOver = useCallback((event: { over: { id: unknown } | null }) => {
+    if (isViewer) return;
     const ovStatus = event.over?.id as IssueStatus | null;
     setOverId(ovStatus && ['TODO', 'IN_PROGRESS', 'DONE'].includes(ovStatus as string) ? ovStatus : null);
-  }, []);
+  }, [isViewer]);
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       setActiveIssue(null);
       setOverId(null);
+
+      if (isViewer) return;
 
       const { active, over } = event;
       if (!over) return;
@@ -278,7 +289,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
         );
       }
     },
-    [issues, onStatusChange],
+    [isViewer, issues, onStatusChange],
   );
 
   if (error) {
@@ -322,6 +333,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
             onIssueClick={onIssueClick}
             onCreateIssue={onCreateIssue}
             isOver={overId === col.status}
+            isViewer={isViewer}
           />
         ))}
       </div>

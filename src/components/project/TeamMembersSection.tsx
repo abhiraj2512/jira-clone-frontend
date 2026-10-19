@@ -12,6 +12,7 @@ interface TeamMembersSectionProps {
   members: ProjectMember[];
   loading: boolean;
   currentUserId: string;
+  onManageTeam?: () => void;
 }
 
 const ROLE_CONFIG: Record<
@@ -66,6 +67,7 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   members,
   loading,
   currentUserId,
+  onManageTeam,
 }) => {
   if (loading) {
     return (
@@ -98,58 +100,79 @@ const TeamMembersSection: React.FC<TeamMembersSectionProps> = ({
   }
 
   return (
-    <div className={styles.membersList}>
-      {members.map((member) => {
-        const config = ROLE_CONFIG[member.role];
-        const initials = getInitials(member.fullName, member.email);
-        const avatarColor = getAvatarColor(member.userId);
-        const isCurrentUser = member.userId === currentUserId;
-        const displayName = member.fullName || member.email.split('@')[0];
+    <>
+      <div className={styles.membersList}>
+        {members.map((member) => {
+          const config = ROLE_CONFIG[member.role];
+          const initials = getInitials(member.fullName, member.email);
+          const avatarColor = getAvatarColor(member.userId);
+          const isCurrentUser = member.userId === currentUserId;
+          const displayName = member.fullName || member.email.split('@')[0];
 
-        return (
-          <div key={member.userId} className={styles.memberRow}>
-            <Tooltip title={member.email}>
-              <Avatar
-                size={40}
-                style={{ backgroundColor: avatarColor, fontWeight: 700, fontSize: 14, flexShrink: 0 }}
-              >
-                {initials}
-              </Avatar>
-            </Tooltip>
+          return (
+            <div key={member.userId} className={styles.memberRow}>
+              <Tooltip title={member.email}>
+                <Avatar
+                  size={40}
+                  style={{ backgroundColor: avatarColor, fontWeight: 700, fontSize: 14, flexShrink: 0 }}
+                >
+                  {initials}
+                </Avatar>
+              </Tooltip>
 
-            <div className={styles.memberInfo}>
-              <div className={styles.memberName}>
-                {displayName}
-                {isCurrentUser && (
-                  <span className={styles.youBadge}>You</span>
-                )}
+              <div className={styles.memberInfo}>
+                <div className={styles.memberName}>
+                  {displayName}
+                  {isCurrentUser && (
+                    <span className={styles.youBadge}>You</span>
+                  )}
+                </div>
+                <div className={styles.memberEmail}>{member.email}</div>
               </div>
-              <div className={styles.memberEmail}>{member.email}</div>
-            </div>
 
-            <Tag
-              icon={config.icon}
-              style={{
-                color: config.color,
-                backgroundColor: config.bg,
-                border: 'none',
-                fontWeight: 600,
-                fontSize: 11,
-                padding: '2px 8px',
-                borderRadius: 4,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              {config.label}
-            </Tag>
-          </div>
-        );
-      })}
-    </div>
+              <Tag
+                icon={config.icon}
+                style={{
+                  color: config.color,
+                  backgroundColor: config.bg,
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {config.label}
+              </Tag>
+            </div>
+          );
+        })}
+      </div>
+      {onManageTeam && (
+        <div style={{ marginTop: 12, textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={onManageTeam}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#0052cc',
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 500,
+              padding: '4px 8px',
+            }}
+          >
+            View Full Team & Permissions →
+          </button>
+        </div>
+      )}
+    </>
   );
 };
 
